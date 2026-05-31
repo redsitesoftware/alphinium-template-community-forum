@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "Community Forum",
+    "slug": "community-forum",
+    "version": "1.0.0",
+    "backgroundColor": "#FAFAFA",
+    "primaryColor": "#F97316",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "name": "Community Forum",
+      "description": "Moderated AI-powered community discussion platform",
+      "themeColor": "#0891B2",
+      "lang": "en"
+    },
+    "android": {
+      "package": "com.redsitesoftware.communityForum"
+    },
+    "ios": {
+      "bundleIdentifier": "com.redsitesoftware.communityForum"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "d488f9e1-3bcf-4d13-a72d-63956b2e84d0"
+      }
+    },
+    "owner": "zx10r06",
+    "description": "Moderated AI-powered community discussion platform"
+  }
+}
