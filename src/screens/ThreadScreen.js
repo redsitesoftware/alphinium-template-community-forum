@@ -29,6 +29,7 @@ export default function ThreadScreen() {
  <Text style={styles.title}>{thread.title}</Text>
  <View style={styles.authorRow}><Avatar name={thread.author} accent={category.color} size={56} /><View style={styles.authorMeta}><Text style={styles.authorName}>{thread.author}</Text><Text style={styles.authorJoined}>{thread.authorJoined} • {thread.timeAgo}</Text></View></View>
  {thread.content.map((paragraph, index) => <Text key={`${thread.id}-paragraph-${index}`} style={styles.paragraph}>{paragraph}</Text>)}
+ {thread.tags ? <View style={styles.tagRow}>{thread.tags.split(',').map(tag => tag.trim()).filter(Boolean).map(tag => <View key={tag} style={styles.tagPill}><Text style={styles.tagText}># {tag}</Text></View>)}</View> : null}
  <View style={styles.engagementRow}><TouchableOpacity style={[styles.engagementButton, isUpvoted && styles.engagementButtonActive]} onPress={() => toggleUpvote(thread.id)}><Text style={[styles.engagementText, isUpvoted && styles.engagementTextActive]}>▲ {thread.upvotes} Upvotes</Text></TouchableOpacity><TouchableOpacity style={[styles.engagementButton, isHearted && styles.heartButtonActive]} onPress={() => toggleHeart(thread.id)}><Text style={[styles.engagementText, isHearted && styles.heartTextActive]}>️ {thread.hearts}</Text></TouchableOpacity><View style={styles.replyCountPill}><Text style={styles.replyCountText}> {thread.replyCount} replies</Text></View></View>
  </View>
  <View style={styles.repliesHeader}><Text style={styles.repliesTitle}>Recent Replies</Text><Text style={styles.repliesSubtitle}>A lively mix of new builders and longtime alphinium makers.</Text></View>
@@ -61,6 +62,9 @@ const styles = StyleSheet.create({
  avatar: { borderWidth: 2 },
  paragraph: { ...typography.body, color: colors.textMuted, marginBottom: spacing.md },
  engagementRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap', marginTop: spacing.sm },
+ tagRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap', marginBottom: spacing.lg },
+ tagPill: { backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: 5 },
+ tagText: { color: colors.textSoft, fontSize: 12, fontWeight: '600' },
  engagementButton: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, backgroundColor: colors.background },
  engagementButtonActive: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
  heartButtonActive: { borderColor: '#F9A8D4', backgroundColor: '#FDF2F8' },
