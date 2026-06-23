@@ -453,26 +453,26 @@ function forumReducer(state, action) {
    reports: state.reports.map(r =>
    r.id === action.reportId ? { ...r, status: 'removed' } : r
   case 'TOGGLE_REPLY_UPVOTE': {
-  const alreadyUpvoted = state.upvotedReplyIds.includes(action.replyId);
-  return {
-    ...state,
-    upvotedReplyIds: alreadyUpvoted
-    ? state.upvotedReplyIds.filter(id => id !== action.replyId)
-    : [...state.upvotedReplyIds, action.replyId],
-    threads: state.threads.map(thread =>
-    thread.id === action.threadId
-      ? {
-        ...thread,
-        replies: thread.replies.map(reply =>
-          reply.id === action.replyId
-          ? { ...reply, upvotes: reply.upvotes + (alreadyUpvoted ? -1 : 1) }
-          : reply
-        ),
-      }
-      : thread
-    ),
-  };
-  }
+ };
+ }
+ case 'TOGGLE_REPLY_UPVOTE': {
+ const alreadyUpvoted = state.upvotedReplyIds.includes(action.replyId);
+ return {
+   ...state,
+   upvotedReplyIds: alreadyUpvoted
+   ? state.upvotedReplyIds.filter(id => id !== action.replyId)
+   : [...state.upvotedReplyIds, action.replyId],
+   threads: state.threads.map(thread =>
+   thread.id === action.threadId
+     ? {
+       ...thread,
+       replies: thread.replies.map(reply =>
+         reply.id === action.replyId
+         ? { ...reply, upvotes: reply.upvotes + (alreadyUpvoted ? -1 : 1) }
+         : reply
+       ),
+     }
+     : thread
    ),
  };
  }
