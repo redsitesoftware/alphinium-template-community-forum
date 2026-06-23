@@ -10,7 +10,6 @@ function Avatar({ name, accent, size = 44 }) {
  return <Image source={{ uri: getForumAvatar(name) }} style={[styles.avatar, { width: size, height: size, borderRadius: size / 2, borderColor: `${accent}33` }]} />;
 }
 
-const REPORT_REASONS = ['Spam', 'Harassment', 'Misinformation', 'Off-topic', 'Other'];
 
 function showReportAlert(onSelect) {
  Alert.alert(
