@@ -277,9 +277,11 @@ const initialState = {
  name: 'Jordan Lee',
  avatar: '‍',
  joinedDate: 'Joined Mar 2024',
+ isAdmin: true,
  },
  upvotedThreadIds: [],
  heartedThreadIds: [],
+ reports: [],
 };
 
 function forumReducer(state, action) {
@@ -398,6 +400,58 @@ function forumReducer(state, action) {
  }),
  };
  }
+ case 'REPORT_CONTENT': {
+ const alreadyReported = state.reports.some(
+   r => r.targetId === action.targetId && r.reportedBy === state.currentUser.name
+ );
+ if (alreadyReported) {
+   return state;
+ }
+ const report = {
+   id: Date.now().toString(),
+   type: action.reportType,
+   targetId: action.targetId,
+   threadId: action.threadId,
+   reason: action.reason,
+   reportedBy: state.currentUser.name,
+   reportedAt: Date.now(),
+   status: 'pending',
+ };
+ return { ...state, reports: [...state.reports, report] };
+ }
+ case 'DISMISS_REPORT': {
+ return {
+   ...state,
+   reports: state.reports.map(r =>
+   r.id === action.reportId ? { ...r, status: 'dismissed' } : r
+   ),
+ };
+ }
+ case 'REMOVE_CONTENT': {
+ const report = state.reports.find(r => r.id === action.reportId);
+ if (!report) {
+   return state;
+ }
+ let threads = state.threads;
+ if (report.type === 'thread') {
+   threads = state.threads.filter(t => t.id !== report.targetId);
+ } else if (report.type === 'reply') {
+   threads = state.threads.map(t => {
+   if (t.id !== report.threadId) {
+     return t;
+   }
+   const remaining = t.replies.filter(r => r.id !== report.targetId);
+   return { ...t, replyCount: t.replyCount - (t.replies.length - remaining.length), replies: remaining };
+   });
+ }
+ return {
+   ...state,
+   threads,
+   reports: state.reports.map(r =>
+   r.id === action.reportId ? { ...r, status: 'removed' } : r
+   ),
+ };
+ }
  case 'TOGGLE_UPVOTE': {
  const alreadyUpvoted = state.upvotedThreadIds.includes(action.threadId);
  return {
@@ -445,6 +499,10 @@ export function ForumProvider({ children }) {
  addReply: (threadId, content, parentReplyId) => dispatch({ type: 'ADD_REPLY', threadId, content, parentReplyId }),
  editReply: (threadId, replyId, newContent) => dispatch({ type: 'EDIT_REPLY', threadId, replyId, newContent }),
  deleteReply: (threadId, replyId) => dispatch({ type: 'DELETE_REPLY', threadId, replyId }),
+ reportContent: (reportType, targetId, threadId, reason) =>
+ dispatch({ type: 'REPORT_CONTENT', reportType, targetId, threadId, reason }),
+ dismissReport: reportId => dispatch({ type: 'DISMISS_REPORT', reportId }),
+ removeContent: reportId => dispatch({ type: 'REMOVE_CONTENT', reportId }),
  toggleUpvote: threadId => dispatch({ type: 'TOGGLE_UPVOTE', threadId }),
  toggleHeart: threadId => dispatch({ type: 'TOGGLE_HEART', threadId }),
  getCategory: categoryId => state.categories.find(category => category.id === categoryId),
