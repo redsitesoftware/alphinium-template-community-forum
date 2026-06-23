@@ -337,6 +337,14 @@ function forumReducer(state, action) {
  if (thread.id !== action.threadId) {
  return thread;
  }
+ let parentReplyId = action.parentReplyId ?? null;
+ if (parentReplyId !== null) {
+ const parentReply = thread.replies.find(r => r.id === parentReplyId);
+ // Flatten to max depth 2: if parent is already nested, don't nest further
+ if (parentReply && parentReply.parentReplyId != null) {
+   parentReplyId = null;
+ }
+ }
  const reply = {
  id: `reply-${Date.now()}`,
  author: 'You',
@@ -344,11 +352,48 @@ function forumReducer(state, action) {
  timeAgo: 'just now',
  upvotes: 0,
  content: text,
+ parentReplyId,
  };
  return {
  ...thread,
  replyCount: thread.replyCount + 1,
  replies: [...thread.replies, reply],
+ };
+ }),
+ };
+ }
+ case 'EDIT_REPLY': {
+ return {
+ ...state,
+ threads: state.threads.map(thread => {
+ if (thread.id !== action.threadId) {
+ return thread;
+ }
+ return {
+ ...thread,
+ replies: thread.replies.map(reply =>
+   reply.id === action.replyId
+     ? { ...reply, content: action.newContent, editedAt: Date.now() }
+     : reply
+ ),
+ };
+ }),
+ };
+ }
+ case 'DELETE_REPLY': {
+ return {
+ ...state,
+ threads: state.threads.map(thread => {
+ if (thread.id !== action.threadId) {
+ return thread;
+ }
+ const remaining = thread.replies.filter(
+ reply => reply.id !== action.replyId && reply.parentReplyId !== action.replyId
+ );
+ return {
+ ...thread,
+ replyCount: thread.replyCount - (thread.replies.length - remaining.length),
+ replies: remaining,
  };
  }),
  };
@@ -397,7 +442,9 @@ export function ForumProvider({ children }) {
  openNewPost: () => dispatch({ type: 'OPEN_NEW_POST' }),
  openProfile: () => dispatch({ type: 'OPEN_PROFILE' }),
  postThread: payload => dispatch({ type: 'POST_THREAD', payload }),
- addReply: (threadId, content) => dispatch({ type: 'ADD_REPLY', threadId, content }),
+ addReply: (threadId, content, parentReplyId) => dispatch({ type: 'ADD_REPLY', threadId, content, parentReplyId }),
+ editReply: (threadId, replyId, newContent) => dispatch({ type: 'EDIT_REPLY', threadId, replyId, newContent }),
+ deleteReply: (threadId, replyId) => dispatch({ type: 'DELETE_REPLY', threadId, replyId }),
  toggleUpvote: threadId => dispatch({ type: 'TOGGLE_UPVOTE', threadId }),
  toggleHeart: threadId => dispatch({ type: 'TOGGLE_HEART', threadId }),
  getCategory: categoryId => state.categories.find(category => category.id === categoryId),
