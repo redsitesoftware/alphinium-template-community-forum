@@ -25,7 +25,7 @@ function showReportAlert(onSelect) {
  );
 }
 
-function ReplyCard({ reply, category, isNested, currentUser, onReplyPress, onEditSave, onDelete, replyingToId, editingId }) {
+function ReplyCard({ reply, category, isNested, currentUser, onReplyPress, onEditSave, onDelete, replyingToId, editingId, onUpvoteToggle, isUpvoted: isReplyUpvoted }) {
  const [editText, setEditText] = useState(reply.content);
  const isOwn = reply.author === currentUser.name;
  const isReplyingHere = replyingToId === reply.id;
@@ -45,7 +45,7 @@ function ReplyCard({ reply, category, isNested, currentUser, onReplyPress, onEdi
      </View>
     </View>
     <View style={styles.replyActions}>
-     <Text style={styles.replyUpvotes}>▲ {reply.upvotes}</Text>
+     <TouchableOpacity onPress={onUpvoteToggle} style={[styles.replyUpvoteButton, isReplyUpvoted && styles.replyUpvoteButtonActive]}><Text style={[styles.replyUpvotes, isReplyUpvoted && styles.replyUpvotesActive]}>▲ {reply.upvotes}</Text></TouchableOpacity>
      {isOwn && !isEditingHere && (
       <>
        <TouchableOpacity onPress={() => onEditSave(reply.id, null)} style={styles.actionLink}>
@@ -117,7 +117,7 @@ function ReplyCard({ reply, category, isNested, currentUser, onReplyPress, onEdi
 }
 
 export default function ThreadScreen() {
- const { selectedThread, getThread, getCategory, goHome, addReply, editReply, deleteReply, toggleUpvote, toggleHeart, reportContent, upvotedThreadIds, heartedThreadIds, currentUser } = useForum();
+ const { selectedThread, getThread, getCategory, goHome, addReply, editReply, deleteReply, toggleUpvote, toggleHeart, toggleReplyUpvote, reportContent, upvotedThreadIds, heartedThreadIds, upvotedReplyIds, currentUser } = useForum();
  const [replyText, setReplyText] = useState('');
  const [activeReplyId, setActiveReplyId] = useState(null);
  const [editingReplyId, setEditingReplyId] = useState(null);
@@ -217,6 +217,8 @@ export default function ThreadScreen() {
         onDelete={handleDelete}
         replyingToId={activeReplyId}
         editingId={editingReplyId}
+        onUpvoteToggle={() => toggleReplyUpvote(thread.id, reply.id)}
+        isUpvoted={upvotedReplyIds.includes(reply.id)}
        />
        {(childRepliesByParentId[reply.id] || []).map(child => (
         <ReplyCard
@@ -230,6 +232,8 @@ export default function ThreadScreen() {
          onDelete={handleDelete}
          replyingToId={null}
          editingId={editingReplyId}
+         onUpvoteToggle={() => toggleReplyUpvote(thread.id, child.id)}
+         isUpvoted={upvotedReplyIds.includes(child.id)}
         />
        ))}
       </View>
@@ -287,6 +291,9 @@ const styles = StyleSheet.create({
  replyTime: { color: colors.textSoft, fontSize: 12, marginTop: 2 },
  replyActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
  replyUpvotes: { color: colors.textMuted, fontWeight: '700', fontSize: 13 },
+ replyUpvoteButton: { paddingHorizontal: spacing.sm, paddingVertical: 4, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border },
+ replyUpvoteButtonActive: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+ replyUpvotesActive: { color: colors.primary },
  replyContent: { color: colors.textMuted, fontSize: 15, lineHeight: 22 },
  actionLink: { paddingHorizontal: spacing.sm },
  actionLinkText: { color: colors.primary, fontSize: 13, fontWeight: '600' },
