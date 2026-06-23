@@ -294,6 +294,8 @@ function forumReducer(state, action) {
  return { ...state, phase: 'new-post', selectedThread: null };
  case 'OPEN_PROFILE':
  return { ...state, phase: 'profile', selectedThread: null };
+ case 'OPEN_ADMIN':
+ return { ...state, phase: 'admin', selectedThread: null };
  case 'POST_THREAD': {
  const threadId = `thread-${Date.now()}`;
  const content = action.payload.content
@@ -450,6 +452,7 @@ export function ForumProvider({ children }) {
  openThread: threadId => dispatch({ type: 'OPEN_THREAD', threadId }),
  openNewPost: () => dispatch({ type: 'OPEN_NEW_POST' }),
  openProfile: () => dispatch({ type: 'OPEN_PROFILE' }),
+ openAdmin: () => dispatch({ type: 'OPEN_ADMIN' }),
  postThread: payload => dispatch({ type: 'POST_THREAD', payload }),
  addReply: (threadId, content) => dispatch({ type: 'ADD_REPLY', threadId, content }),
  reportContent: (reportType, targetId, threadId, reason) =>

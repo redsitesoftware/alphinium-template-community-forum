@@ -13,7 +13,7 @@ function CategoryBadge({ category }) {
 }
 
 export default function HomeScreen() {
- const { categories, currentUser, threads, openNewPost, openProfile, openThread, getCategory } = useForum();
+ const { categories, currentUser, threads, openNewPost, openProfile, openAdmin, openThread, getCategory } = useForum();
  const [selectedCategory, setSelectedCategory] = useState('all');
  const visibleThreads = useMemo(() => threads.filter(thread => selectedCategory === 'all' || thread.categoryId === selectedCategory), [selectedCategory, threads]);
 
@@ -28,6 +28,7 @@ export default function HomeScreen() {
  </View>
  <View style={styles.headerActions}>
  <TouchableOpacity style={styles.newPostButton} onPress={openNewPost}><Text style={styles.newPostText}>＋ New Post</Text></TouchableOpacity>
+ {currentUser.isAdmin && <TouchableOpacity style={styles.adminButton} onPress={openAdmin}><Text style={styles.adminButtonText}>⚑ Admin</Text></TouchableOpacity>}
  <TouchableOpacity onPress={openProfile}><Avatar name={currentUser.name} /></TouchableOpacity>
  </View>
  </View>
@@ -85,6 +86,8 @@ const styles = StyleSheet.create({
  headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
  newPostButton: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
  newPostText: { color: colors.surface, fontWeight: '700', fontSize: 14 },
+ adminButton: { backgroundColor: colors.surface, borderRadius: radius.pill, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, borderWidth: 1, borderColor: colors.border },
+ adminButtonText: { color: colors.text, fontWeight: '700', fontSize: 14 },
  avatar: { borderWidth: 2, backgroundColor: colors.primarySoft },
  banner: { backgroundColor: '#FFF7ED', borderRadius: radius.lg, borderWidth: 1, borderColor: '#FED7AA', marginBottom: spacing.xl, overflow: 'hidden' },
  bannerImage: { width: '100%', height: 220 },

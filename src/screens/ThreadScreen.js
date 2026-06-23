@@ -1,15 +1,31 @@
 import React, { useMemo, useState } from 'react';
-import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { FORUM_IMAGES, getForumAvatar } from '../media';
 import { colors, radius, shadows, spacing, typography } from '../theme';
 import { useForum } from '../store/forumStore';
+
+const REPORT_REASONS = ['Spam', 'Harassment', 'Misinformation', 'Off-topic', 'Other'];
 
 function Avatar({ name, accent, size = 44 }) {
  return <Image source={{ uri: getForumAvatar(name) }} style={[styles.avatar, { width: size, height: size, borderRadius: size / 2, borderColor: `${accent}33` }]} />;
 }
 
+function showReportAlert(onSelect) {
+ Alert.alert(
+  'Report Content',
+  'Why are you reporting this?',
+  [
+   ...REPORT_REASONS.map(reason => ({
+    text: reason,
+    onPress: () => onSelect(reason),
+   })),
+   { text: 'Cancel', style: 'cancel' },
+  ]
+ );
+}
+
 export default function ThreadScreen() {
- const { selectedThread, getThread, getCategory, goHome, addReply, toggleUpvote, toggleHeart, upvotedThreadIds, heartedThreadIds } = useForum();
+ const { selectedThread, getThread, getCategory, goHome, addReply, toggleUpvote, toggleHeart, reportContent, upvotedThreadIds, heartedThreadIds, currentUser } = useForum();
  const [replyText, setReplyText] = useState('');
  const thread = getThread(selectedThread);
  const category = thread ? getCategory(thread.categoryId) : null;
@@ -17,6 +33,20 @@ export default function ThreadScreen() {
  const isHearted = useMemo(() => heartedThreadIds.includes(selectedThread), [heartedThreadIds, selectedThread]);
  if (!thread || !category) return null;
  const submitReply = () => { if (!replyText.trim()) return; addReply(thread.id, replyText); setReplyText(''); };
+
+ const handleReportThread = () => {
+  showReportAlert(reason => {
+   reportContent('thread', thread.id, thread.id, reason);
+   Alert.alert('Report submitted', 'Thank you for helping keep the community safe.');
+  });
+ };
+
+ const handleReportReply = replyId => {
+  showReportAlert(reason => {
+   reportContent('reply', replyId, thread.id, reason);
+   Alert.alert('Report submitted', 'Thank you for helping keep the community safe.');
+  });
+ };
 
  return (
  <SafeAreaView style={styles.safeArea}>
@@ -30,10 +60,29 @@ export default function ThreadScreen() {
  <View style={styles.authorRow}><Avatar name={thread.author} accent={category.color} size={56} /><View style={styles.authorMeta}><Text style={styles.authorName}>{thread.author}</Text><Text style={styles.authorJoined}>{thread.authorJoined} • {thread.timeAgo}</Text></View></View>
  {thread.content.map((paragraph, index) => <Text key={`${thread.id}-paragraph-${index}`} style={styles.paragraph}>{paragraph}</Text>)}
  {thread.tags ? <View style={styles.tagRow}>{thread.tags.split(',').map(tag => tag.trim()).filter(Boolean).map((tag, i) => <View key={`${tag}-${i}`} style={styles.tagPill}><Text style={styles.tagText}># {tag}</Text></View>)}</View> : null}
- <View style={styles.engagementRow}><TouchableOpacity style={[styles.engagementButton, isUpvoted && styles.engagementButtonActive]} onPress={() => toggleUpvote(thread.id)}><Text style={[styles.engagementText, isUpvoted && styles.engagementTextActive]}>▲ {thread.upvotes} Upvotes</Text></TouchableOpacity><TouchableOpacity style={[styles.engagementButton, isHearted && styles.heartButtonActive]} onPress={() => toggleHeart(thread.id)}><Text style={[styles.engagementText, isHearted && styles.heartTextActive]}>️ {thread.hearts}</Text></TouchableOpacity><View style={styles.replyCountPill}><Text style={styles.replyCountText}> {thread.replyCount} replies</Text></View></View>
+ <View style={styles.engagementRow}>
+  <TouchableOpacity style={[styles.engagementButton, isUpvoted && styles.engagementButtonActive]} onPress={() => toggleUpvote(thread.id)}><Text style={[styles.engagementText, isUpvoted && styles.engagementTextActive]}>▲ {thread.upvotes} Upvotes</Text></TouchableOpacity>
+  <TouchableOpacity style={[styles.engagementButton, isHearted && styles.heartButtonActive]} onPress={() => toggleHeart(thread.id)}><Text style={[styles.engagementText, isHearted && styles.heartTextActive]}>️ {thread.hearts}</Text></TouchableOpacity>
+  <View style={styles.replyCountPill}><Text style={styles.replyCountText}> {thread.replyCount} replies</Text></View>
+  {!currentUser.isAdmin && <TouchableOpacity style={styles.reportButton} onPress={handleReportThread}><Text style={styles.reportButtonText}>⚑ Report</Text></TouchableOpacity>}
+ </View>
  </View>
  <View style={styles.repliesHeader}><Text style={styles.repliesTitle}>Recent Replies</Text><Text style={styles.repliesSubtitle}>A lively mix of new builders and longtime alphinium makers.</Text></View>
- {thread.replies.map(reply => <View key={reply.id} style={styles.replyCard}><View style={styles.replyHeader}><View style={styles.replyIdentity}><Avatar name={reply.author} accent={category.color} /><View><Text style={styles.replyAuthor}>{reply.author}</Text><Text style={styles.replyTime}>{reply.timeAgo}</Text></View></View><Text style={styles.replyUpvotes}>▲ {reply.upvotes}</Text></View><Text style={styles.replyContent}>{reply.content}</Text></View>)}
+ {thread.replies.map(reply => (
+  <View key={reply.id} style={styles.replyCard}>
+   <View style={styles.replyHeader}>
+    <View style={styles.replyIdentity}>
+     <Avatar name={reply.author} accent={category.color} />
+     <View><Text style={styles.replyAuthor}>{reply.author}</Text><Text style={styles.replyTime}>{reply.timeAgo}</Text></View>
+    </View>
+    <View style={styles.replyActions}>
+     <Text style={styles.replyUpvotes}>▲ {reply.upvotes}</Text>
+     {!currentUser.isAdmin && <TouchableOpacity style={styles.reportButton} onPress={() => handleReportReply(reply.id)}><Text style={styles.reportButtonText}>⚑ Report</Text></TouchableOpacity>}
+    </View>
+   </View>
+   <Text style={styles.replyContent}>{reply.content}</Text>
+  </View>
+ ))}
  <View style={styles.replyComposer}><Text style={styles.replyComposerTitle}>Reply</Text><TextInput style={styles.replyInput} multiline placeholder="Share what you're building or add your advice..." placeholderTextColor={colors.textSoft} value={replyText} onChangeText={setReplyText} /><TouchableOpacity style={styles.postReplyButton} onPress={submitReply}><Text style={styles.postReplyText}>Post Reply</Text></TouchableOpacity></View>
  </View>
  </ScrollView>
@@ -61,7 +110,7 @@ const styles = StyleSheet.create({
  authorJoined: { color: colors.textMuted, marginTop: 2 },
  avatar: { borderWidth: 2 },
  paragraph: { ...typography.body, color: colors.textMuted, marginBottom: spacing.md },
- engagementRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap', marginTop: spacing.sm },
+ engagementRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap', marginTop: spacing.sm, alignItems: 'center' },
  tagRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap', marginBottom: spacing.lg },
  tagPill: { backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: 5 },
  tagText: { color: colors.textSoft, fontSize: 12, fontWeight: '600' },
@@ -73,6 +122,8 @@ const styles = StyleSheet.create({
  heartTextActive: { color: colors.pink },
  replyCountPill: { borderRadius: radius.pill, backgroundColor: colors.surface, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, borderWidth: 1, borderColor: colors.border },
  replyCountText: { color: colors.textMuted, fontWeight: '700' },
+ reportButton: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+ reportButtonText: { color: colors.textSoft, fontSize: 13, fontWeight: '600' },
  repliesHeader: { marginBottom: spacing.md },
  repliesTitle: { ...typography.heading, color: colors.text, marginBottom: 4 },
  repliesSubtitle: { color: colors.textMuted },
@@ -81,6 +132,7 @@ const styles = StyleSheet.create({
  replyIdentity: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1 },
  replyAuthor: { color: colors.text, fontWeight: '700', fontSize: 15 },
  replyTime: { color: colors.textSoft, fontSize: 12, marginTop: 2 },
+ replyActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
  replyUpvotes: { color: colors.textMuted, fontWeight: '700', fontSize: 13 },
  replyContent: { color: colors.textMuted, fontSize: 15, lineHeight: 22 },
  replyComposer: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.xl, marginTop: spacing.sm },
