@@ -280,6 +280,7 @@ const initialState = {
  },
  upvotedThreadIds: [],
  heartedThreadIds: [],
+ draft: null,
 };
 
 function forumReducer(state, action) {
@@ -426,6 +427,10 @@ function forumReducer(state, action) {
  ),
  };
  }
+ case 'SAVE_DRAFT':
+ return { ...state, draft: { ...state.draft, ...action.payload } };
+ case 'CLEAR_DRAFT':
+ return { ...state, draft: null };
  default:
  return state;
  }
@@ -449,6 +454,8 @@ export function ForumProvider({ children }) {
  toggleHeart: threadId => dispatch({ type: 'TOGGLE_HEART', threadId }),
  getCategory: categoryId => state.categories.find(category => category.id === categoryId),
  getThread: threadId => state.threads.find(thread => thread.id === threadId),
+ saveDraft: payload => dispatch({ type: 'SAVE_DRAFT', payload }),
+ clearDraft: () => dispatch({ type: 'CLEAR_DRAFT' }),
  }),
  [state]
  );
