@@ -22,6 +22,8 @@ function showReportAlert(onSelect) {
    })),
    { text: 'Cancel', style: 'cancel' },
   ]
+ );
+}
 
 function ReplyCard({ reply, category, isNested, currentUser, onReplyPress, onEditSave, onDelete, replyingToId, editingId }) {
  const [editText, setEditText] = useState(reply.content);
