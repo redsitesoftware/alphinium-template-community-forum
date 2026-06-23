@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useMemo, useReducer } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useReducer } from 'react';
+import { fetchThreads, fetchThread, createThread } from '../api/threads';
 
 const ForumContext = createContext(null);
 
@@ -279,12 +280,15 @@ const initialState = {
  avatar: '‍',
  joinedDate: 'Joined Mar 2024',
  isAdmin: true,
+ jwtToken: null,
  },
  upvotedThreadIds: [],
  heartedThreadIds: [],
  reports: [],
  upvotedReplyIds: [],
  draft: null,
+ loading: false,
+ error: null,
 };
 
 function forumReducer(state, action) {
@@ -540,6 +544,33 @@ function forumReducer(state, action) {
  return { ...state, draft: { ...state.draft, ...action.payload } };
  case 'CLEAR_DRAFT':
  return { ...state, draft: null };
+ case 'UPDATE_THREAD': {
+ return {
+   ...state,
+   threads: state.threads.some(t => t.id === action.thread.id)
+   ? state.threads.map(t => t.id === action.thread.id ? { ...action.thread, replies: t.replies } : t)
+   : [action.thread, ...state.threads],
+ };
+ }
+ case 'SET_LOADING':
+ return { ...state, loading: action.loading };
+ case 'SET_ERROR':
+ return { ...state, error: action.error };
+ case 'SET_JWT':
+ return { ...state, currentUser: { ...state.currentUser, jwtToken: action.token } };
+ case 'INIT_THREADS':
+ return { ...state, threads: action.threads, loading: false, error: null };
+ case 'PREPEND_THREAD':
+ return {
+   ...state,
+   threads: [action.thread, ...state.threads],
+   phase: 'thread',
+   selectedThread: action.thread.id,
+   upvotedThreadIds: [...state.upvotedThreadIds, action.thread.id],
+   heartedThreadIds: [...state.heartedThreadIds, action.thread.id],
+   loading: false,
+   error: null,
+ };
  default:
  return state;
  }
@@ -548,17 +579,41 @@ function forumReducer(state, action) {
 export function ForumProvider({ children }) {
  const [state, dispatch] = useReducer(forumReducer, initialState);
 
+ useEffect(() => {
+ async function initThreads() {
+  try {
+   dispatch({ type: 'SET_LOADING', loading: true });
+   const threads = await fetchThreads({ page: 1, limit: 20 });
+   dispatch({ type: 'INIT_THREADS', threads });
+  } catch {
+   dispatch({ type: 'SET_LOADING', loading: false });
+  }
+ }
+ initThreads();
+ }, []);
+
  const value = useMemo(
  () => ({
  ...state,
  goHome: () => dispatch({ type: 'GO_HOME' }),
- openThread: threadId => dispatch({ type: 'OPEN_THREAD', threadId }),
+ openThread: threadId => {
+  dispatch({ type: 'OPEN_THREAD', threadId });
+  fetchThread(threadId).then(thread => dispatch({ type: 'UPDATE_THREAD', thread })).catch(() => {});
+ },
  openNewPost: () => dispatch({ type: 'OPEN_NEW_POST' }),
  openProfile: () => dispatch({ type: 'OPEN_PROFILE' }),
  openAdmin: () => dispatch({ type: 'OPEN_ADMIN' }),
  updateProfile: payload => dispatch({ type: 'UPDATE_PROFILE', payload }),
- postThread: payload => dispatch({ type: 'POST_THREAD', payload }),
- updateProfile: payload => dispatch({ type: 'UPDATE_PROFILE', payload }),
+ postThread: async payload => {
+  try {
+   dispatch({ type: 'SET_LOADING', loading: true });
+   const thread = await createThread(payload, state.currentUser.jwtToken);
+   dispatch({ type: 'PREPEND_THREAD', thread });
+  } catch {
+   dispatch({ type: 'SET_LOADING', loading: false });
+   dispatch({ type: 'POST_THREAD', payload });
+  }
+ },
  addReply: (threadId, content, parentReplyId) => dispatch({ type: 'ADD_REPLY', threadId, content, parentReplyId }),
  editReply: (threadId, replyId, newContent) => dispatch({ type: 'EDIT_REPLY', threadId, replyId, newContent }),
  deleteReply: (threadId, replyId) => dispatch({ type: 'DELETE_REPLY', threadId, replyId }),
@@ -570,8 +625,9 @@ export function ForumProvider({ children }) {
  toggleReplyUpvote: (threadId, replyId) => dispatch({ type: 'TOGGLE_REPLY_UPVOTE', threadId, replyId }),
  toggleHeart: threadId => dispatch({ type: 'TOGGLE_HEART', threadId }),
  togglePin: threadId => dispatch({ type: 'TOGGLE_PIN', threadId }),
+ setJwt: token => dispatch({ type: 'SET_JWT', token }),
  getCategory: categoryId => state.categories.find(category => category.id === categoryId),
- getThread: threadId => state.threads.find(thread => thread.id === threadId),
+ getThread: threadId => state.threads.find(thread => thread.id === threadId) ?? null,
  getPagedThreads: (categoryId, cursor = 0, limit = 20) => {
    const filtered = categoryId === 'all'
      ? state.threads
