@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
+ Alert,
  SafeAreaView,
  ScrollView,
  StyleSheet,
@@ -12,19 +13,69 @@ import { useForum } from '../store/forumStore';
 import { colors, radius, spacing, typography } from '../theme';
 
 export default function NewPostScreen() {
- const { categories, goHome, postThread } = useForum();
- const [categoryId, setCategoryId] = useState(categories[0].id);
- const [title, setTitle] = useState('');
- const [content, setContent] = useState('');
- const [tags, setTags] = useState('');
+ const { categories, draft, goHome, postThread, saveDraft, clearDraft } = useForum();
+
+ const [categoryId, setCategoryId] = useState(draft?.categoryId ?? categories[0].id);
+ const [title, setTitle] = useState(draft?.title ?? '');
+ const [content, setContent] = useState(draft?.content ?? '');
+ const [tags, setTags] = useState(draft?.tags ?? '');
 
  const canPost = title.trim() && content.trim();
+
+ // Track whether fields have been modified since last auto-save
+ const hasDraftContent = title.trim() || content.trim() || tags.trim();
+
+ // Keep a ref to the latest field values for use inside the interval callback
+ const fieldsRef = useRef({ categoryId, title, content, tags });
+ useEffect(() => {
+  fieldsRef.current = { categoryId, title, content, tags };
+ }, [categoryId, title, content, tags]);
+
+ // Auto-save draft every 30 seconds while any field has content
+ useEffect(() => {
+  const interval = setInterval(() => {
+   const { categoryId: cId, title: t, content: c, tags: tg } = fieldsRef.current;
+   if (t.trim() || c.trim() || tg.trim()) {
+    saveDraft({ categoryId: cId, title: t, content: c, tags: tg });
+   }
+  }, 30000);
+  return () => clearInterval(interval);
+ // eslint-disable-next-line react-hooks/exhaustive-deps
+ }, []);
+
+ function handleCancel() {
+  if (hasDraftContent) {
+   Alert.alert(
+    'Discard draft?',
+    'You have unsaved content. Do you want to discard it?',
+    [
+     { text: 'Keep editing', style: 'cancel' },
+     {
+      text: 'Discard',
+      style: 'destructive',
+      onPress: () => {
+       clearDraft();
+       goHome();
+      },
+     },
+    ],
+   );
+  } else {
+   goHome();
+  }
+ }
+
+ function handlePost() {
+  if (!canPost) return;
+  postThread({ categoryId, title, content, tags });
+  clearDraft();
+ }
 
  return (
  <SafeAreaView style={styles.safeArea}>
  <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
  <View style={styles.container}>
- <TouchableOpacity style={styles.backButton} onPress={goHome}>
+ <TouchableOpacity style={styles.backButton} onPress={handleCancel}>
  <Text style={styles.backText}>← Cancel</Text>
  </TouchableOpacity>
 
@@ -81,7 +132,7 @@ export default function NewPostScreen() {
 
  <TouchableOpacity
  style={[styles.postButton, !canPost && styles.postButtonDisabled]}
- onPress={() => canPost && postThread({ categoryId, title, content, tags })}
+ onPress={handlePost}
  disabled={!canPost}
  >
  <Text style={styles.postButtonText}>{canPost ? 'Post Thread' : 'Add a title and content'}</Text>

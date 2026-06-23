@@ -284,6 +284,7 @@ const initialState = {
  heartedThreadIds: [],
  reports: [],
  upvotedReplyIds: [],
+ draft: null,
 };
 
 function forumReducer(state, action) {
@@ -535,6 +536,10 @@ function forumReducer(state, action) {
  ),
  };
  }
+ case 'SAVE_DRAFT':
+ return { ...state, draft: { ...state.draft, ...action.payload } };
+ case 'CLEAR_DRAFT':
+ return { ...state, draft: null };
  default:
  return state;
  }
@@ -576,6 +581,8 @@ export function ForumProvider({ children }) {
    const next_cursor = cursor + page.length;
    return { threads: page, has_more: next_cursor < total_count, next_cursor, total_count };
  },
+ saveDraft: payload => dispatch({ type: 'SAVE_DRAFT', payload }),
+ clearDraft: () => dispatch({ type: 'CLEAR_DRAFT' }),
  }),
  [state]
  );
