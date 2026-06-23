@@ -452,7 +452,7 @@ function forumReducer(state, action) {
    threads,
    reports: state.reports.map(r =>
    r.id === action.reportId ? { ...r, status: 'removed' } : r
-  case 'TOGGLE_REPLY_UPVOTE': {
+   ),
  };
  }
  case 'TOGGLE_REPLY_UPVOTE': {
