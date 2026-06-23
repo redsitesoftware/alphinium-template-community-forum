@@ -9,7 +9,7 @@ function Avatar({ name, accent, size = 44 }) {
 }
 
 export default function ThreadScreen() {
- const { selectedThread, getThread, getCategory, goHome, addReply, toggleUpvote, toggleHeart, upvotedThreadIds, heartedThreadIds } = useForum();
+ const { selectedThread, getThread, getCategory, goHome, addReply, toggleUpvote, toggleHeart, toggleReplyUpvote, upvotedThreadIds, heartedThreadIds, upvotedReplyIds } = useForum();
  const [replyText, setReplyText] = useState('');
  const thread = getThread(selectedThread);
  const category = thread ? getCategory(thread.categoryId) : null;
@@ -33,7 +33,7 @@ export default function ThreadScreen() {
  <View style={styles.engagementRow}><TouchableOpacity style={[styles.engagementButton, isUpvoted && styles.engagementButtonActive]} onPress={() => toggleUpvote(thread.id)}><Text style={[styles.engagementText, isUpvoted && styles.engagementTextActive]}>▲ {thread.upvotes} Upvotes</Text></TouchableOpacity><TouchableOpacity style={[styles.engagementButton, isHearted && styles.heartButtonActive]} onPress={() => toggleHeart(thread.id)}><Text style={[styles.engagementText, isHearted && styles.heartTextActive]}>️ {thread.hearts}</Text></TouchableOpacity><View style={styles.replyCountPill}><Text style={styles.replyCountText}> {thread.replyCount} replies</Text></View></View>
  </View>
  <View style={styles.repliesHeader}><Text style={styles.repliesTitle}>Recent Replies</Text><Text style={styles.repliesSubtitle}>A lively mix of new builders and longtime alphinium makers.</Text></View>
- {thread.replies.map(reply => <View key={reply.id} style={styles.replyCard}><View style={styles.replyHeader}><View style={styles.replyIdentity}><Avatar name={reply.author} accent={category.color} /><View><Text style={styles.replyAuthor}>{reply.author}</Text><Text style={styles.replyTime}>{reply.timeAgo}</Text></View></View><Text style={styles.replyUpvotes}>▲ {reply.upvotes}</Text></View><Text style={styles.replyContent}>{reply.content}</Text></View>)}
+ {thread.replies.map(reply => { const isReplyUpvoted = upvotedReplyIds.includes(reply.id); return <View key={reply.id} style={styles.replyCard}><View style={styles.replyHeader}><View style={styles.replyIdentity}><Avatar name={reply.author} accent={category.color} /><View><Text style={styles.replyAuthor}>{reply.author}</Text><Text style={styles.replyTime}>{reply.timeAgo}</Text></View></View><TouchableOpacity style={[styles.replyUpvoteButton, isReplyUpvoted && styles.replyUpvoteButtonActive]} onPress={() => toggleReplyUpvote(thread.id, reply.id)}><Text style={[styles.replyUpvotes, isReplyUpvoted && styles.replyUpvotesActive]}>▲ {reply.upvotes}</Text></TouchableOpacity></View><Text style={styles.replyContent}>{reply.content}</Text></View>; })}
  <View style={styles.replyComposer}><Text style={styles.replyComposerTitle}>Reply</Text><TextInput style={styles.replyInput} multiline placeholder="Share what you're building or add your advice..." placeholderTextColor={colors.textSoft} value={replyText} onChangeText={setReplyText} /><TouchableOpacity style={styles.postReplyButton} onPress={submitReply}><Text style={styles.postReplyText}>Post Reply</Text></TouchableOpacity></View>
  </View>
  </ScrollView>
@@ -82,6 +82,9 @@ const styles = StyleSheet.create({
  replyAuthor: { color: colors.text, fontWeight: '700', fontSize: 15 },
  replyTime: { color: colors.textSoft, fontSize: 12, marginTop: 2 },
  replyUpvotes: { color: colors.textMuted, fontWeight: '700', fontSize: 13 },
+ replyUpvoteButton: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, backgroundColor: colors.background },
+ replyUpvoteButtonActive: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+ replyUpvotesActive: { color: colors.primary },
  replyContent: { color: colors.textMuted, fontSize: 15, lineHeight: 22 },
  replyComposer: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.xl, marginTop: spacing.sm },
  replyComposerTitle: { ...typography.subheading, color: colors.text, marginBottom: spacing.md },

@@ -280,6 +280,7 @@ const initialState = {
  },
  upvotedThreadIds: [],
  heartedThreadIds: [],
+ upvotedReplyIds: [],
 };
 
 function forumReducer(state, action) {
@@ -353,6 +354,27 @@ function forumReducer(state, action) {
  }),
  };
  }
+ case 'TOGGLE_REPLY_UPVOTE': {
+ const alreadyUpvoted = state.upvotedReplyIds.includes(action.replyId);
+ return {
+   ...state,
+   upvotedReplyIds: alreadyUpvoted
+   ? state.upvotedReplyIds.filter(id => id !== action.replyId)
+   : [...state.upvotedReplyIds, action.replyId],
+   threads: state.threads.map(thread =>
+   thread.id === action.threadId
+     ? {
+       ...thread,
+       replies: thread.replies.map(reply =>
+         reply.id === action.replyId
+         ? { ...reply, upvotes: reply.upvotes + (alreadyUpvoted ? -1 : 1) }
+         : reply
+       ),
+     }
+     : thread
+   ),
+ };
+ }
  case 'TOGGLE_UPVOTE': {
  const alreadyUpvoted = state.upvotedThreadIds.includes(action.threadId);
  return {
@@ -399,6 +421,7 @@ export function ForumProvider({ children }) {
  postThread: payload => dispatch({ type: 'POST_THREAD', payload }),
  addReply: (threadId, content) => dispatch({ type: 'ADD_REPLY', threadId, content }),
  toggleUpvote: threadId => dispatch({ type: 'TOGGLE_UPVOTE', threadId }),
+ toggleReplyUpvote: (threadId, replyId) => dispatch({ type: 'TOGGLE_REPLY_UPVOTE', threadId, replyId }),
  toggleHeart: threadId => dispatch({ type: 'TOGGLE_HEART', threadId }),
  getCategory: categoryId => state.categories.find(category => category.id === categoryId),
  getThread: threadId => state.threads.find(thread => thread.id === threadId),
