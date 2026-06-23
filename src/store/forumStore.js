@@ -402,7 +402,6 @@ function forumReducer(state, action) {
  }),
  };
  }
->>>>>>> 4f69358acf6673f048886063adf427791cfb114f
  case 'REPORT_CONTENT': {
  const alreadyReported = state.reports.some(
    r => r.targetId === action.targetId && r.reportedBy === state.currentUser.name
