@@ -3,6 +3,7 @@ import HomeScreen from '../screens/HomeScreen';
 import ThreadScreen from '../screens/ThreadScreen';
 import NewPostScreen from '../screens/NewPostScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import AdminScreen from '../screens/AdminScreen';
 import { useForum } from '../store/forumStore';
 
 export default function AppNavigator() {
@@ -15,6 +16,8 @@ export default function AppNavigator() {
  return <NewPostScreen />;
  case 'profile':
  return <ProfileScreen />;
+ case 'admin':
+ return <AdminScreen />;
  case 'home':
  default:
  return <HomeScreen />;

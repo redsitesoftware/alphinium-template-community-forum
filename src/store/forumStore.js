@@ -294,6 +294,8 @@ function forumReducer(state, action) {
  return { ...state, phase: 'new-post', selectedThread: null };
  case 'OPEN_PROFILE':
  return { ...state, phase: 'profile', selectedThread: null };
+ case 'OPEN_ADMIN':
+ return { ...state, phase: 'admin', selectedThread: null };
  case 'POST_THREAD': {
  const threadId = `thread-${Date.now()}`;
  const content = action.payload.content
@@ -400,6 +402,7 @@ function forumReducer(state, action) {
  }),
  };
  }
+>>>>>>> 4f69358acf6673f048886063adf427791cfb114f
  case 'REPORT_CONTENT': {
  const alreadyReported = state.reports.some(
    r => r.targetId === action.targetId && r.reportedBy === state.currentUser.name
@@ -509,6 +512,7 @@ export function ForumProvider({ children }) {
  openThread: threadId => dispatch({ type: 'OPEN_THREAD', threadId }),
  openNewPost: () => dispatch({ type: 'OPEN_NEW_POST' }),
  openProfile: () => dispatch({ type: 'OPEN_PROFILE' }),
+ openAdmin: () => dispatch({ type: 'OPEN_ADMIN' }),
  postThread: payload => dispatch({ type: 'POST_THREAD', payload }),
  addReply: (threadId, content, parentReplyId) => dispatch({ type: 'ADD_REPLY', threadId, content, parentReplyId }),
  editReply: (threadId, replyId, newContent) => dispatch({ type: 'EDIT_REPLY', threadId, replyId, newContent }),
