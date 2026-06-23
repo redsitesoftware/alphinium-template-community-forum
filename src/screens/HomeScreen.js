@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { FORUM_IMAGES, getForumAvatar } from '../media';
 import { colors, radius, shadows, spacing, typography } from '../theme';
 import { useForum } from '../store/forumStore';
@@ -15,7 +15,21 @@ function CategoryBadge({ category }) {
 export default function HomeScreen() {
  const { categories, currentUser, threads, openNewPost, openProfile, openThread, getCategory } = useForum();
  const [selectedCategory, setSelectedCategory] = useState('all');
- const visibleThreads = useMemo(() => threads.filter(thread => selectedCategory === 'all' || thread.categoryId === selectedCategory), [selectedCategory, threads]);
+ const [searchQuery, setSearchQuery] = useState('');
+ const visibleThreads = useMemo(() => {
+  const query = searchQuery.trim().toLowerCase();
+  return threads.filter(thread => {
+   const matchesCategory = selectedCategory === 'all' || thread.categoryId === selectedCategory;
+   if (!matchesCategory) return false;
+   if (!query) return true;
+   const contentText = Array.isArray(thread.content) ? thread.content.join(' ') : (thread.content || '');
+   return (
+    thread.title.toLowerCase().includes(query) ||
+    (thread.excerpt || '').toLowerCase().includes(query) ||
+    contentText.toLowerCase().includes(query)
+   );
+  });
+ }, [selectedCategory, searchQuery, threads]);
 
  return (
  <SafeAreaView style={styles.safeArea}>
@@ -41,12 +55,35 @@ export default function HomeScreen() {
  </View>
  </View>
 
+ <View style={styles.searchContainer}>
+ <Text style={styles.searchIcon}>🔍</Text>
+ <TextInput
+  style={styles.searchInput}
+  value={searchQuery}
+  onChangeText={setSearchQuery}
+  placeholder="Search threads…"
+  placeholderTextColor={colors.textSoft}
+  returnKeyType="search"
+  clearButtonMode="while-editing"
+ />
+ {searchQuery.length > 0 && (
+  <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.searchClear}>
+   <Text style={styles.searchClearText}>✕</Text>
+  </TouchableOpacity>
+ )}
+ </View>
+
  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
  <TouchableOpacity style={[styles.categoryChip, selectedCategory === 'all' && styles.categoryChipActive]} onPress={() => setSelectedCategory('all')}><Text style={[styles.categoryChipText, selectedCategory === 'all' && styles.categoryChipTextActive]}> All threads</Text></TouchableOpacity>
  {categories.map(category => <TouchableOpacity key={category.id} style={[styles.categoryChip, selectedCategory === category.id && styles.categoryChipActive]} onPress={() => setSelectedCategory(category.id)}><Text style={[styles.categoryChipText, selectedCategory === category.id && styles.categoryChipTextActive]}>{category.emoji} {category.label} · {category.threadCount}</Text></TouchableOpacity>)}
  </ScrollView>
 
  <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Popular Threads</Text><Text style={styles.sectionMeta}>{visibleThreads.length} active discussions</Text></View>
+ {visibleThreads.length === 0 ? (
+ <View style={styles.emptyState}>
+  <Text style={styles.emptyStateText}>No threads match your search</Text>
+ </View>
+ ) : null}
  {visibleThreads.map(thread => {
  const category = getCategory(thread.categoryId);
  return (
@@ -121,4 +158,11 @@ const styles = StyleSheet.create({
  calloutCard: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: '#FED7AA', padding: spacing.xl, marginTop: spacing.sm, marginBottom: spacing.xl },
  calloutTitle: { color: colors.primary, fontSize: 18, fontWeight: '800', marginBottom: spacing.sm },
  calloutText: { color: colors.textMuted, fontSize: 15, lineHeight: 22 },
+ searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, marginBottom: spacing.md, height: 44 },
+ searchIcon: { fontSize: 16, marginRight: spacing.sm, color: colors.textSoft },
+ searchInput: { flex: 1, fontSize: 15, color: colors.text, height: '100%', outlineStyle: 'none' },
+ searchClear: { padding: spacing.xs },
+ searchClearText: { fontSize: 13, color: colors.textSoft },
+ emptyState: { paddingVertical: spacing.xxxl, alignItems: 'center' },
+ emptyStateText: { color: colors.textMuted, fontSize: 15 },
 });
