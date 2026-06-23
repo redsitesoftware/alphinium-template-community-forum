@@ -1,8 +1,10 @@
-import React, { useMemo, useState } from 'react';
-import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { FORUM_IMAGES, getForumAvatar } from '../media';
 import { colors, radius, shadows, spacing, typography } from '../theme';
 import { useForum } from '../store/forumStore';
+
+const PAGE_SIZE = 20;
 
 function Avatar({ name, accent = colors.primary, size = 42 }) {
  return <Image source={{ uri: getForumAvatar(name) }} style={[styles.avatar, { width: size, height: size, borderRadius: size / 2, borderColor: `${accent}33` }]} />;
@@ -13,14 +15,46 @@ function CategoryBadge({ category }) {
 }
 
 export default function HomeScreen() {
- const { categories, currentUser, threads, openNewPost, openProfile, openThread, getCategory } = useForum();
+ const { categories, currentUser, openNewPost, openProfile, openThread, getCategory, getPagedThreads } = useForum();
  const [selectedCategory, setSelectedCategory] = useState('all');
- const visibleThreads = useMemo(() => threads.filter(thread => selectedCategory === 'all' || thread.categoryId === selectedCategory), [selectedCategory, threads]);
+ const [cursor, setCursor] = useState(0);
+ const [displayedThreads, setDisplayedThreads] = useState(() => {
+ const { threads } = getPagedThreads('all', 0, PAGE_SIZE);
+ return threads;
+ });
+ const [hasMore, setHasMore] = useState(() => {
+ const { has_more } = getPagedThreads('all', 0, PAGE_SIZE);
+ return has_more;
+ });
+ const [totalCount, setTotalCount] = useState(() => {
+ const { total_count } = getPagedThreads('all', 0, PAGE_SIZE);
+ return total_count;
+ });
+ const loadingMore = useRef(false);
 
- return (
- <SafeAreaView style={styles.safeArea}>
- <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
- <View style={styles.container}>
+ const selectCategory = useCallback((categoryId) => {
+ setSelectedCategory(categoryId);
+ const { threads, has_more, total_count, next_cursor } = getPagedThreads(categoryId, 0, PAGE_SIZE);
+ setDisplayedThreads(threads);
+ setHasMore(has_more);
+ setTotalCount(total_count);
+ setCursor(next_cursor);
+ loadingMore.current = false;
+ }, [getPagedThreads]);
+
+ const loadNextPage = useCallback(() => {
+ if (!hasMore || loadingMore.current) return;
+ loadingMore.current = true;
+ const { threads, has_more, total_count, next_cursor } = getPagedThreads(selectedCategory, cursor, PAGE_SIZE);
+ setDisplayedThreads(prev => [...prev, ...threads]);
+ setHasMore(has_more);
+ setTotalCount(total_count);
+ setCursor(next_cursor);
+ loadingMore.current = false;
+ }, [hasMore, cursor, selectedCategory, getPagedThreads]);
+
+ const ListHeader = useMemo(() => (
+ <View>
  <View style={styles.headerRow}>
  <View>
  <View style={styles.logoRow}><View style={styles.logoMark} /><Text style={styles.logoText}>Community</Text></View>
@@ -42,15 +76,25 @@ export default function HomeScreen() {
  </View>
 
  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
- <TouchableOpacity style={[styles.categoryChip, selectedCategory === 'all' && styles.categoryChipActive]} onPress={() => setSelectedCategory('all')}><Text style={[styles.categoryChipText, selectedCategory === 'all' && styles.categoryChipTextActive]}> All threads</Text></TouchableOpacity>
- {categories.map(category => <TouchableOpacity key={category.id} style={[styles.categoryChip, selectedCategory === category.id && styles.categoryChipActive]} onPress={() => setSelectedCategory(category.id)}><Text style={[styles.categoryChipText, selectedCategory === category.id && styles.categoryChipTextActive]}>{category.emoji} {category.label} · {category.threadCount}</Text></TouchableOpacity>)}
+ <TouchableOpacity style={[styles.categoryChip, selectedCategory === 'all' && styles.categoryChipActive]} onPress={() => selectCategory('all')}><Text style={[styles.categoryChipText, selectedCategory === 'all' && styles.categoryChipTextActive]}> All threads</Text></TouchableOpacity>
+ {categories.map(category => <TouchableOpacity key={category.id} style={[styles.categoryChip, selectedCategory === category.id && styles.categoryChipActive]} onPress={() => selectCategory(category.id)}><Text style={[styles.categoryChipText, selectedCategory === category.id && styles.categoryChipTextActive]}>{category.emoji} {category.label} · {category.threadCount}</Text></TouchableOpacity>)}
  </ScrollView>
 
- <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Popular Threads</Text><Text style={styles.sectionMeta}>{visibleThreads.length} active discussions</Text></View>
- {visibleThreads.map(thread => {
+ <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Popular Threads</Text><Text style={styles.sectionMeta}>{totalCount} active discussions</Text></View>
+ </View>
+ ), [selectedCategory, categories, currentUser, openNewPost, openProfile, selectCategory, totalCount]);
+
+ const ListFooter = useMemo(() => (
+ <View>
+ {hasMore && <ActivityIndicator style={styles.loadingIndicator} color={colors.primary} />}
+ <View style={styles.calloutCard}><Text style={styles.calloutTitle}> alphinium-auth</Text><Text style={styles.calloutText}>Real user accounts with GitHub/Google OAuth. Thread ownership, moderation tools, and user profiles — add to any alphinium app with one addon.</Text></View>
+ </View>
+ ), [hasMore]);
+
+ const renderThread = useCallback(({ item: thread }) => {
  const category = getCategory(thread.categoryId);
  return (
- <TouchableOpacity key={thread.id} style={styles.threadCard} onPress={() => openThread(thread.id)}>
+ <TouchableOpacity style={styles.threadCard} onPress={() => openThread(thread.id)}>
  <View style={styles.threadHeader}>
  <Avatar name={thread.author} accent={category.color} size={52} />
  <View style={styles.threadTitleWrap}>
@@ -65,18 +109,30 @@ export default function HomeScreen() {
  {thread.tags ? <View style={styles.tagRow}>{thread.tags.split(',').map(tag => tag.trim()).filter(Boolean).map((tag, i) => <View key={`${tag}-${i}`} style={styles.tagPill}><Text style={styles.tagText}>{tag}</Text></View>)}</View> : null}
  </TouchableOpacity>
  );
- })}
- <View style={styles.calloutCard}><Text style={styles.calloutTitle}> alphinium-auth</Text><Text style={styles.calloutText}>Real user accounts with GitHub/Google OAuth. Thread ownership, moderation tools, and user profiles — add to any alphinium app with one addon.</Text></View>
- </View>
- </ScrollView>
+ }, [getCategory, openThread]);
+
+ return (
+ <SafeAreaView style={styles.safeArea}>
+ <FlatList
+ data={displayedThreads}
+ keyExtractor={item => item.id}
+ renderItem={renderThread}
+ ListHeaderComponent={ListHeader}
+ ListFooterComponent={ListFooter}
+ contentContainerStyle={styles.content}
+ showsVerticalScrollIndicator={false}
+ onEndReached={loadNextPage}
+ onEndReachedThreshold={0.3}
+ style={styles.list}
+ />
  </SafeAreaView>
  );
 }
 
 const styles = StyleSheet.create({
  safeArea: { flex: 1, backgroundColor: colors.background },
- content: { padding: spacing.xl },
- container: { width: '100%', maxWidth: 1040, alignSelf: 'center' },
+ list: { flex: 1 },
+ content: { padding: spacing.xl, maxWidth: 1040, alignSelf: 'center', width: '100%' },
  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.md, marginBottom: spacing.xl, flexWrap: 'wrap' },
  logoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
  logoMark: { width: 14, height: 14, borderRadius: radius.pill, backgroundColor: colors.primary },
@@ -121,4 +177,5 @@ const styles = StyleSheet.create({
  calloutCard: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: '#FED7AA', padding: spacing.xl, marginTop: spacing.sm, marginBottom: spacing.xl },
  calloutTitle: { color: colors.primary, fontSize: 18, fontWeight: '800', marginBottom: spacing.sm },
  calloutText: { color: colors.textMuted, fontSize: 15, lineHeight: 22 },
+ loadingIndicator: { marginVertical: spacing.lg },
 });
