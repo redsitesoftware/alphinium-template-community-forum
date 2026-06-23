@@ -94,6 +94,7 @@ const initialThreads = [
  views: '2.1k',
  pinned: true,
  resolved: false,
+ tags: 'welcome, community, getting-started',
  excerpt: 'Say hello, share your build, and meet other makers shipping fast with alphinium.',
  content: [
  'Welcome to the official alphinium community forum — a place for builders, founders, and creators to swap ideas, ask questions, and celebrate launches together.',
@@ -117,6 +118,7 @@ const initialThreads = [
  views: '980',
  pinned: false,
  resolved: false,
+ tags: 'ecommerce, store-template, launch',
  excerpt: 'A step-by-step breakdown of templates, addons, and launch tweaks that got this store live before lunch.',
  content: [
  'Yesterday I challenged myself to see how far I could get with alphinium in one morning, and I ended up launching a complete storefront with payments, product pages, and customer confirmations before lunch.',
@@ -139,6 +141,7 @@ const initialThreads = [
  views: '1.4k',
  pinned: false,
  resolved: false,
+ tags: 'dark-mode, alphinium-auth, theming',
  excerpt: 'Would love a native dark theme for the hosted auth widgets and profile settings flows.',
  content: [
  'I am using alphinium-auth inside a customer portal that defaults to a dark theme, and the white auth cards stand out more than I would like on mobile.',
@@ -161,6 +164,7 @@ const initialThreads = [
  views: '860',
  pinned: false,
  resolved: false,
+ tags: 'payments, stripe, environment-config',
  excerpt: 'Looking for the cleanest way to keep checkout flows in test mode across staging and local previews.',
  content: [
  'I have the addon wired up and the checkout flow works, but I want to make sure every preview environment stays locked to Stripe test mode until the client signs off.',
@@ -183,6 +187,7 @@ const initialThreads = [
  views: '720',
  pinned: false,
  resolved: false,
+ tags: 'restaurant-site, launch, templates',
  excerpt: 'Menus, reservations, and a polished launch page all shipped in under a week.',
  content: [
  'We flipped our old site to a new restaurant-site build this weekend and it already feels dramatically easier for staff to update.',
@@ -205,6 +210,7 @@ const initialThreads = [
  views: '640',
  pinned: false,
  resolved: false,
+ tags: 'alphinium-maps, mobile, performance',
  excerpt: 'Markers are smooth on desktop, but I am looking for tricks to keep pans and clustering quick on mobile.',
  content: [
  'I am building a local discovery app and the map experience feels snappy on desktop, but lower-end phones start to stutter once the marker density goes up.',
@@ -227,6 +233,7 @@ const initialThreads = [
  views: '510',
  pinned: false,
  resolved: false,
+ tags: 'fitness, mobile-app, intro',
  excerpt: 'Hey everyone! I am turning our class schedule and membership onboarding into a proper mobile experience.',
  content: [
  'Hi everyone — I run a small gym and I am using alphinium to build a member-facing app for classes, onboarding, and trainer updates.',
@@ -249,6 +256,7 @@ const initialThreads = [
  views: '430',
  pinned: false,
  resolved: true,
+ tags: 'chatinstance, safari, bug',
  excerpt: 'Resolved by deferring widget mount until after the first paint and removing a stale viewport override.',
  content: [
  'I hit an issue where ChatInstance showed perfectly on desktop and Chrome mobile emulation, but would not appear at all in real mobile Safari.',

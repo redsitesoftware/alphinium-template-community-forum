@@ -62,6 +62,7 @@ export default function HomeScreen() {
  </View>
  <View style={styles.threadFooterTop}><CategoryBadge category={category} /><Text style={styles.threadTime}>{thread.timeAgo}</Text></View>
  <View style={styles.threadFooterBottom}><Text style={styles.threadStats}>▲ {thread.upvotes}</Text><Text style={styles.threadStats}> {thread.replyCount}</Text><Text style={styles.threadStats}> {thread.views}</Text></View>
+ {thread.tags ? <View style={styles.tagRow}>{thread.tags.split(',').map(tag => tag.trim()).filter(Boolean).map((tag, i) => <View key={`${tag}-${i}`} style={styles.tagPill}><Text style={styles.tagText}>{tag}</Text></View>)}</View> : null}
  </TouchableOpacity>
  );
  })}
@@ -114,6 +115,9 @@ const styles = StyleSheet.create({
  categoryBadgeText: { fontSize: 12, fontWeight: '700', color: colors.text },
  threadTime: { color: colors.textSoft, fontSize: 12 },
  threadStats: { color: colors.textMuted, fontWeight: '600' },
+ tagRow: { flexDirection: 'row', gap: spacing.xs, flexWrap: 'wrap', marginTop: spacing.sm },
+ tagPill: { backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingHorizontal: spacing.sm, paddingVertical: 3 },
+ tagText: { color: colors.textSoft, fontSize: 11, fontWeight: '600' },
  calloutCard: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: '#FED7AA', padding: spacing.xl, marginTop: spacing.sm, marginBottom: spacing.xl },
  calloutTitle: { color: colors.primary, fontSize: 18, fontWeight: '800', marginBottom: spacing.sm },
  calloutText: { color: colors.textMuted, fontSize: 15, lineHeight: 22 },
