@@ -15,7 +15,7 @@ const profile = {
  name: 'Jordan Lee',
  avatar: '‍',
  joinedDate: 'Joined Mar 2024',
- bio: 'Building cool things with alphinium.',
+ bio: 'Building a fitness app for my gym using alphinium. Passionate about mobile UX and fast product iteration.',
  stats: [
  { label: 'Threads', value: '12' },
  { label: 'Replies', value: '47' },
@@ -484,6 +484,13 @@ function forumReducer(state, action) {
      }
      : thread
    ),
+  };
+  }
+ case 'UPDATE_PROFILE': {
+ return {
+   ...state,
+   profile: { ...state.profile, ...action.payload },
+
  };
  }
  case 'TOGGLE_UPVOTE': {
@@ -546,6 +553,7 @@ export function ForumProvider({ children }) {
  openAdmin: () => dispatch({ type: 'OPEN_ADMIN' }),
  updateProfile: payload => dispatch({ type: 'UPDATE_PROFILE', payload }),
  postThread: payload => dispatch({ type: 'POST_THREAD', payload }),
+ updateProfile: payload => dispatch({ type: 'UPDATE_PROFILE', payload }),
  addReply: (threadId, content, parentReplyId) => dispatch({ type: 'ADD_REPLY', threadId, content, parentReplyId }),
  editReply: (threadId, replyId, newContent) => dispatch({ type: 'EDIT_REPLY', threadId, replyId, newContent }),
  deleteReply: (threadId, replyId) => dispatch({ type: 'DELETE_REPLY', threadId, replyId }),
