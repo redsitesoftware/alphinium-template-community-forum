@@ -15,6 +15,7 @@ const profile = {
  name: 'Jordan Lee',
  avatar: '‍',
  joinedDate: 'Joined Mar 2024',
+ bio: 'Building cool things with alphinium.',
  stats: [
  { label: 'Threads', value: '12' },
  { label: 'Replies', value: '47' },
@@ -292,6 +293,15 @@ function forumReducer(state, action) {
  return { ...state, phase: 'new-post', selectedThread: null };
  case 'OPEN_PROFILE':
  return { ...state, phase: 'profile', selectedThread: null };
+ case 'UPDATE_PROFILE':
+ return {
+  ...state,
+  profile: {
+  ...state.profile,
+  ...(action.payload.name !== undefined ? { name: action.payload.name } : {}),
+  ...(action.payload.bio !== undefined ? { bio: action.payload.bio } : {}),
+  },
+ };
  case 'POST_THREAD': {
  const threadId = `thread-${Date.now()}`;
  const content = action.payload.content
@@ -441,6 +451,7 @@ export function ForumProvider({ children }) {
  openThread: threadId => dispatch({ type: 'OPEN_THREAD', threadId }),
  openNewPost: () => dispatch({ type: 'OPEN_NEW_POST' }),
  openProfile: () => dispatch({ type: 'OPEN_PROFILE' }),
+ updateProfile: payload => dispatch({ type: 'UPDATE_PROFILE', payload }),
  postThread: payload => dispatch({ type: 'POST_THREAD', payload }),
  addReply: (threadId, content, parentReplyId) => dispatch({ type: 'ADD_REPLY', threadId, content, parentReplyId }),
  editReply: (threadId, replyId, newContent) => dispatch({ type: 'EDIT_REPLY', threadId, replyId, newContent }),
