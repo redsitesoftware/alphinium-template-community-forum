@@ -381,6 +381,20 @@ function forumReducer(state, action) {
  ),
  };
  }
+ case 'TOGGLE_PIN': {
+ const target = state.threads.find(t => t.id === action.threadId);
+ if (!target) return state;
+ if (!target.pinned) {
+ const pinnedCount = state.threads.filter(t => t.pinned).length;
+ if (pinnedCount >= 3) return state;
+ }
+ return {
+ ...state,
+ threads: state.threads.map(t =>
+ t.id === action.threadId ? { ...t, pinned: !t.pinned } : t
+ ),
+ };
+ }
  default:
  return state;
  }
@@ -400,6 +414,7 @@ export function ForumProvider({ children }) {
  addReply: (threadId, content) => dispatch({ type: 'ADD_REPLY', threadId, content }),
  toggleUpvote: threadId => dispatch({ type: 'TOGGLE_UPVOTE', threadId }),
  toggleHeart: threadId => dispatch({ type: 'TOGGLE_HEART', threadId }),
+ togglePin: threadId => dispatch({ type: 'TOGGLE_PIN', threadId }),
  getCategory: categoryId => state.categories.find(category => category.id === categoryId),
  getThread: threadId => state.threads.find(thread => thread.id === threadId),
  }),

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { FORUM_IMAGES, getForumAvatar } from '../media';
 import { colors, radius, shadows, spacing, typography } from '../theme';
 import { useForum } from '../store/forumStore';
@@ -13,9 +13,14 @@ function CategoryBadge({ category }) {
 }
 
 export default function HomeScreen() {
- const { categories, currentUser, threads, openNewPost, openProfile, openThread, getCategory } = useForum();
+ const { categories, currentUser, threads, openNewPost, openProfile, openThread, getCategory, togglePin } = useForum();
  const [selectedCategory, setSelectedCategory] = useState('all');
- const visibleThreads = useMemo(() => threads.filter(thread => selectedCategory === 'all' || thread.categoryId === selectedCategory), [selectedCategory, threads]);
+ const visibleThreads = useMemo(() => {
+   const filtered = threads.filter(thread => selectedCategory === 'all' || thread.categoryId === selectedCategory);
+   const pinned = filtered.filter(t => t.pinned);
+   const unpinned = filtered.filter(t => !t.pinned);
+   return [...pinned, ...unpinned];
+ }, [selectedCategory, threads]);
 
  return (
  <SafeAreaView style={styles.safeArea}>
@@ -49,8 +54,15 @@ export default function HomeScreen() {
  <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Popular Threads</Text><Text style={styles.sectionMeta}>{visibleThreads.length} active discussions</Text></View>
  {visibleThreads.map(thread => {
  const category = getCategory(thread.categoryId);
+ const handleLongPress = () => {
+ if (!thread.pinned && threads.filter(t => t.pinned).length >= 3) {
+   Alert.alert('Pin limit reached', 'Only 3 threads can be pinned at once. Unpin a thread first.');
+   return;
+ }
+ togglePin(thread.id);
+ };
  return (
- <TouchableOpacity key={thread.id} style={styles.threadCard} onPress={() => openThread(thread.id)}>
+ <TouchableOpacity key={thread.id} style={styles.threadCard} onPress={() => openThread(thread.id)} onLongPress={handleLongPress}>
  <View style={styles.threadHeader}>
  <Avatar name={thread.author} accent={category.color} size={52} />
  <View style={styles.threadTitleWrap}>
