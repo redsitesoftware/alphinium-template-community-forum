@@ -25,7 +25,7 @@ function showReportAlert(onSelect) {
  );
 }
 
-function ReplyCard({ reply, category, isNested, currentUser, onReplyPress, onEditSave, onDelete, replyingToId, editingId, onUpvoteToggle, isUpvoted: isReplyUpvoted }) {
+function ReplyCard({ reply, category, isNested, currentUser, onReplyPress, onEditSave, onDelete, replyingToId, editingId, onUpvoteToggle, isUpvoted: isReplyUpvoted, onReport }) {
  const [editText, setEditText] = useState(reply.content);
  const isOwn = reply.author === currentUser.name;
  const isReplyingHere = replyingToId === reply.id;
@@ -55,6 +55,11 @@ function ReplyCard({ reply, category, isNested, currentUser, onReplyPress, onEdi
         <Text style={[styles.actionLinkText, styles.actionLinkDelete]}>Delete</Text>
        </TouchableOpacity>
       </>
+     )}
+     {!isOwn && !currentUser.isAdmin && (
+      <TouchableOpacity onPress={onReport} style={styles.actionLink}>
+       <Text style={styles.reportLinkText}>⚑</Text>
+      </TouchableOpacity>
      )}
     </View>
    </View>
@@ -219,6 +224,7 @@ export default function ThreadScreen() {
         editingId={editingReplyId}
         onUpvoteToggle={() => toggleReplyUpvote(thread.id, reply.id)}
         isUpvoted={upvotedReplyIds.includes(reply.id)}
+        onReport={() => handleReportReply(reply.id)}
        />
        {(childRepliesByParentId[reply.id] || []).map(child => (
         <ReplyCard
@@ -234,6 +240,7 @@ export default function ThreadScreen() {
          editingId={editingReplyId}
          onUpvoteToggle={() => toggleReplyUpvote(thread.id, child.id)}
          isUpvoted={upvotedReplyIds.includes(child.id)}
+         onReport={() => handleReportReply(child.id)}
         />
        ))}
       </View>
@@ -298,6 +305,7 @@ const styles = StyleSheet.create({
  actionLink: { paddingHorizontal: spacing.sm },
  actionLinkText: { color: colors.primary, fontSize: 13, fontWeight: '600' },
  actionLinkDelete: { color: colors.red },
+ reportLinkText: { color: colors.textSoft, fontSize: 13, fontWeight: '600' },
  replyLink: { alignSelf: 'flex-start', marginTop: spacing.sm },
  replyLinkText: { color: colors.primary, fontSize: 13, fontWeight: '600' },
  inlineComposer: { marginTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md },
