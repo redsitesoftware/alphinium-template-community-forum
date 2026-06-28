@@ -17,18 +17,19 @@ function CategoryBadge({ category }) {
 export default function HomeScreen() {
  const { categories, currentUser, openNewPost, openProfile, openAdmin, openThread, getCategory, togglePin, getPagedThreads } = useForum();
  const [selectedCategory, setSelectedCategory] = useState('all');
+ const [sortBy, setSortBy] = useState('latest');
  const [searchQuery, setSearchQuery] = useState('');
  const [cursor, setCursor] = useState(0);
  const [displayedThreads, setDisplayedThreads] = useState(() => {
- const { threads } = getPagedThreads('all', 0, PAGE_SIZE);
+ const { threads } = getPagedThreads('all', 0, PAGE_SIZE, 'latest');
  return threads;
  });
  const [hasMore, setHasMore] = useState(() => {
- const { has_more } = getPagedThreads('all', 0, PAGE_SIZE);
+ const { has_more } = getPagedThreads('all', 0, PAGE_SIZE, 'latest');
  return has_more;
  });
  const [totalCount, setTotalCount] = useState(() => {
- const { total_count } = getPagedThreads('all', 0, PAGE_SIZE);
+ const { total_count } = getPagedThreads('all', 0, PAGE_SIZE, 'latest');
  return total_count;
  });
  const loadingMore = useRef(false);
@@ -36,24 +37,35 @@ export default function HomeScreen() {
  const selectCategory = useCallback((categoryId) => {
  setSelectedCategory(categoryId);
  setSearchQuery('');
- const { threads, has_more, total_count, next_cursor } = getPagedThreads(categoryId, 0, PAGE_SIZE);
+ const { threads, has_more, total_count, next_cursor } = getPagedThreads(categoryId, 0, PAGE_SIZE, sortBy);
  setDisplayedThreads(threads);
  setHasMore(has_more);
  setTotalCount(total_count);
  setCursor(next_cursor);
  loadingMore.current = false;
- }, [getPagedThreads]);
+ }, [getPagedThreads, sortBy]);
+
+ const selectSort = useCallback((newSortBy) => {
+ setSortBy(newSortBy);
+ setSearchQuery('');
+ const { threads, has_more, total_count, next_cursor } = getPagedThreads(selectedCategory, 0, PAGE_SIZE, newSortBy);
+ setDisplayedThreads(threads);
+ setHasMore(has_more);
+ setTotalCount(total_count);
+ setCursor(next_cursor);
+ loadingMore.current = false;
+ }, [getPagedThreads, selectedCategory]);
 
  const loadNextPage = useCallback(() => {
  if (!hasMore || loadingMore.current) return;
  loadingMore.current = true;
- const { threads, has_more, total_count, next_cursor } = getPagedThreads(selectedCategory, cursor, PAGE_SIZE);
+ const { threads, has_more, total_count, next_cursor } = getPagedThreads(selectedCategory, cursor, PAGE_SIZE, sortBy);
  setDisplayedThreads(prev => [...prev, ...threads]);
  setHasMore(has_more);
  setTotalCount(total_count);
  setCursor(next_cursor);
  loadingMore.current = false;
- }, [hasMore, cursor, selectedCategory, getPagedThreads]);
+ }, [hasMore, cursor, selectedCategory, sortBy, getPagedThreads]);
 
  const visibleThreads = useMemo(() => {
  const query = searchQuery.trim().toLowerCase();
@@ -118,9 +130,16 @@ export default function HomeScreen() {
  {categories.map(category => <TouchableOpacity key={category.id} style={[styles.categoryChip, selectedCategory === category.id && styles.categoryChipActive]} onPress={() => selectCategory(category.id)}><Text style={[styles.categoryChipText, selectedCategory === category.id && styles.categoryChipTextActive]}>{category.emoji} {category.label} · {category.threadCount}</Text></TouchableOpacity>)}
  </ScrollView>
 
- <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Popular Threads</Text><Text style={styles.sectionMeta}>{totalCount} active discussions</Text></View>
+ <View style={styles.sectionHeader}>
+ <Text style={styles.sectionTitle}>{sortBy === 'top' ? 'Top Threads' : 'Latest Threads'}</Text>
+ <View style={styles.sortToggle}>
+  <TouchableOpacity style={[styles.sortChip, sortBy === 'latest' && styles.sortChipActive]} onPress={() => selectSort('latest')}><Text style={[styles.sortChipText, sortBy === 'latest' && styles.sortChipTextActive]}>Latest</Text></TouchableOpacity>
+  <TouchableOpacity style={[styles.sortChip, sortBy === 'top' && styles.sortChipActive]} onPress={() => selectSort('top')}><Text style={[styles.sortChipText, sortBy === 'top' && styles.sortChipTextActive]}>▲ Top</Text></TouchableOpacity>
  </View>
- ), [selectedCategory, categories, currentUser, openNewPost, openProfile, openAdmin, selectCategory, totalCount, searchQuery, setSearchQuery]);
+ <Text style={styles.sectionMeta}>{totalCount} active discussions</Text>
+ </View>
+ </View>
+ ), [selectedCategory, sortBy, categories, currentUser, openNewPost, openProfile, openAdmin, selectCategory, selectSort, totalCount, searchQuery, setSearchQuery]);
 
  const ListFooter = useMemo(() => (
  <View>
@@ -198,9 +217,14 @@ const styles = StyleSheet.create({
  categoryChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
  categoryChipText: { color: colors.textMuted, fontWeight: '600' },
  categoryChipTextActive: { color: colors.surface },
- sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: spacing.md, gap: spacing.sm, flexWrap: 'wrap' },
+ sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md, gap: spacing.sm, flexWrap: 'wrap' },
  sectionTitle: { ...typography.heading, color: colors.text },
  sectionMeta: { color: colors.textMuted, fontSize: 13 },
+ sortToggle: { flexDirection: 'row', gap: 4, backgroundColor: colors.surface, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, padding: 3 },
+ sortChip: { paddingHorizontal: spacing.md, paddingVertical: 5, borderRadius: radius.pill },
+ sortChipActive: { backgroundColor: colors.primary },
+ sortChipText: { color: colors.textMuted, fontWeight: '600', fontSize: 13 },
+ sortChipTextActive: { color: colors.surface },
  threadCard: { backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.xl, marginBottom: spacing.md, ...shadows.card },
  threadHeader: { flexDirection: 'row', gap: spacing.md, marginBottom: spacing.md },
  threadTitleWrap: { flex: 1 },

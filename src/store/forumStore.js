@@ -628,12 +628,15 @@ export function ForumProvider({ children }) {
  setJwt: token => dispatch({ type: 'SET_JWT', token }),
  getCategory: categoryId => state.categories.find(category => category.id === categoryId),
  getThread: threadId => state.threads.find(thread => thread.id === threadId) ?? null,
- getPagedThreads: (categoryId, cursor = 0, limit = 20) => {
+ getPagedThreads: (categoryId, cursor = 0, limit = 20, sortBy = 'latest') => {
    const filtered = categoryId === 'all'
      ? state.threads
      : state.threads.filter(t => t.categoryId === categoryId);
-   const total_count = filtered.length;
-   const page = filtered.slice(cursor, cursor + limit);
+   const sorted = sortBy === 'top'
+     ? [...filtered].sort((a, b) => b.upvotes - a.upvotes)
+     : filtered;
+   const total_count = sorted.length;
+   const page = sorted.slice(cursor, cursor + limit);
    const next_cursor = cursor + page.length;
    return { threads: page, has_more: next_cursor < total_count, next_cursor, total_count };
  },
